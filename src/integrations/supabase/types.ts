@@ -14,16 +14,257 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_settings: {
+        Row: {
+          application_deadline: string
+          applications_locked: boolean | null
+          id: string
+          result_release_date: string | null
+          selection_scheduled: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          application_deadline: string
+          applications_locked?: boolean | null
+          id?: string
+          result_release_date?: string | null
+          selection_scheduled?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          application_deadline?: string
+          applications_locked?: boolean | null
+          id?: string
+          result_release_date?: string | null
+          selection_scheduled?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      applications: {
+        Row: {
+          admission_round: number | null
+          admission_type: Database["public"]["Enums"]["admission_type"]
+          date_of_birth: string
+          email: string
+          full_name: string
+          gpa: number
+          id: string
+          matriculation_number: string | null
+          nin: string
+          passport_photo_url: string | null
+          phone: string
+          program_id: string
+          rank: number | null
+          scholarship_status: string | null
+          status: Database["public"]["Enums"]["application_status"]
+          student_id: string
+          submitted_at: string | null
+          test_score: number
+          total_score: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          admission_round?: number | null
+          admission_type?: Database["public"]["Enums"]["admission_type"]
+          date_of_birth: string
+          email: string
+          full_name: string
+          gpa: number
+          id?: string
+          matriculation_number?: string | null
+          nin: string
+          passport_photo_url?: string | null
+          phone: string
+          program_id: string
+          rank?: number | null
+          scholarship_status?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          student_id: string
+          submitted_at?: string | null
+          test_score: number
+          total_score?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          admission_round?: number | null
+          admission_type?: Database["public"]["Enums"]["admission_type"]
+          date_of_birth?: string
+          email?: string
+          full_name?: string
+          gpa?: number
+          id?: string
+          matriculation_number?: string | null
+          nin?: string
+          passport_photo_url?: string | null
+          phone?: string
+          program_id?: string
+          rank?: number | null
+          scholarship_status?: string | null
+          status?: Database["public"]["Enums"]["application_status"]
+          student_id?: string
+          submitted_at?: string | null
+          test_score?: number
+          total_score?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matriculation_sequences: {
+        Row: {
+          current_sequence: number | null
+          id: string
+          program_id: string
+          updated_at: string | null
+          year: number | null
+        }
+        Insert: {
+          current_sequence?: number | null
+          id?: string
+          program_id: string
+          updated_at?: string | null
+          year?: number | null
+        }
+        Update: {
+          current_sequence?: number | null
+          id?: string
+          program_id?: string
+          updated_at?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matriculation_sequences_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: true
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programs: {
+        Row: {
+          code: string
+          created_at: string | null
+          cutoff: number
+          description: string | null
+          id: string
+          name: string
+          slots: number
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          cutoff?: number
+          description?: string | null
+          id?: string
+          name: string
+          slots?: number
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          cutoff?: number
+          description?: string | null
+          id?: string
+          name?: string
+          slots?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      selection_runs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          cutoffs_used: Json | null
+          executed_at: string | null
+          id: string
+          rounds: Json | null
+          scheduled_at: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          cutoffs_used?: Json | null
+          executed_at?: string | null
+          id?: string
+          rounds?: Json | null
+          scheduled_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          cutoffs_used?: Json | null
+          executed_at?: string | null
+          id?: string
+          rounds?: Json | null
+          scheduled_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_matriculation_number: {
+        Args: { p_program_id: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      admission_type: "regular" | "early_decision" | "transfer"
+      app_role: "admin" | "super_admin"
+      application_status:
+        | "submitted"
+        | "under_review"
+        | "selection_pending"
+        | "admitted"
+        | "waitlisted"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +391,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      admission_type: ["regular", "early_decision", "transfer"],
+      app_role: ["admin", "super_admin"],
+      application_status: [
+        "submitted",
+        "under_review",
+        "selection_pending",
+        "admitted",
+        "waitlisted",
+        "rejected",
+      ],
+    },
   },
 } as const

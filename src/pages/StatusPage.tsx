@@ -3,25 +3,68 @@ import { useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { StatusBadge } from '@/components/StatusBadge';
+import { AdmissionLetter } from '@/components/AdmissionLetter';
+import { generateAdmissionLetterPDF } from '@/lib/generatePdf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAdmission } from '@/contexts/AdmissionContext';
-import { Search, FileText, Calendar, Award, Download, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { Search, FileText, Calendar, Award, Download, AlertCircle, Eye, Loader2 } from 'lucide-react';
 
 export default function StatusPage() {
   const location = useLocation();
-  const { getApplicationByEmail, programs, adminSettings } = useAdmission();
   const [email, setEmail] = useState((location.state as { email?: string })?.email || '');
-  const [searchedEmail, setSearchedEmail] = useState('');
-  const application = searchedEmail ? getApplicationByEmail(searchedEmail) : null;
+  const [searchedEmail, setSearchedEmail] = useState((location.state as { email?: string })?.email || '');
+  const [showLetterPreview, setShowLetterPreview] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+
+  // Fetch application by email
+  const { data: application, isLoading } = useQuery({
+    queryKey: ['application-status', searchedEmail],
+    queryFn: async () => {
+      if (!searchedEmail) return null;
+      
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          programs:program_id (
+            id,
+            name,
+            code,
+            slots,
+            cutoff
+          )
+        `)
+        .eq('email', searchedEmail.toLowerCase())
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!searchedEmail,
+  });
+
+  // Fetch admin settings
+  const { data: adminSettings } = useQuery({
+    queryKey: ['admin-settings-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('result_release_date')
+        .single();
+      
+      if (error && error.code !== 'PGRST116') return null;
+      return data;
+    },
+  });
 
   const handleSearch = () => {
-    setSearchedEmail(email.trim());
+    setSearchedEmail(email.trim().toLowerCase());
   };
-
-  const selectedProgram = application ? programs.find(p => p.id === application.programId) : null;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -46,12 +89,12 @@ export default function StatusPage() {
       case 'selection_pending':
         return {
           type: 'warning',
-          message: `Processing results. Results will be released on ${adminSettings.resultReleaseDate ? formatDate(adminSettings.resultReleaseDate) : 'the scheduled date'}.`,
+          message: `Processing results. Results will be released on ${adminSettings?.result_release_date ? formatDate(adminSettings.result_release_date) : 'the scheduled date'}.`,
         };
       case 'admitted':
         return {
           type: 'success',
-          message: `Congratulations! You have been admitted to ${selectedProgram?.name}. ${application.scholarshipStatus === 'awarded' ? 'You have also been awarded a scholarship!' : ''}`,
+          message: `Congratulations! You have been admitted to ${application.programs?.name}. ${application.scholarship_status === 'awarded' ? 'You have also been awarded a scholarship!' : ''}`,
         };
       case 'waitlisted':
         return {
@@ -65,6 +108,39 @@ export default function StatusPage() {
         };
       default:
         return null;
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!application || !application.matriculation_number) {
+      return;
+    }
+
+    setGeneratingPdf(true);
+    try {
+      const pdfBlob = await generateAdmissionLetterPDF({
+        studentName: application.full_name,
+        programName: application.programs?.name || 'Unknown Program',
+        programCode: application.programs?.code || 'N/A',
+        matriculationNumber: application.matriculation_number,
+        passportPhotoUrl: application.passport_photo_url,
+        admissionRound: application.admission_round,
+        scholarshipStatus: application.scholarship_status,
+        dateOfAdmission: application.updated_at || new Date().toISOString(),
+      });
+
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Admission_Letter_${application.matriculation_number.replace(/\//g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -97,15 +173,19 @@ export default function StatusPage() {
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
                 </div>
-                <Button onClick={handleSearch}>
-                  <Search className="h-4 w-4" />
+                <Button onClick={handleSearch} disabled={isLoading}>
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
                   Search
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {searchedEmail && !application && (
+          {searchedEmail && !application && !isLoading && (
             <Card className="border-destructive/20 bg-destructive/5">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3">
@@ -157,58 +237,77 @@ export default function StatusPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Full Name</p>
-                      <p className="font-medium">{application.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">{application.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Program</p>
-                      <p className="font-medium">{selectedProgram?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Admission Type</p>
-                      <p className="font-medium capitalize">{application.admissionType.replace('_', ' ')}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Score</p>
-                      <p className="font-semibold text-accent-foreground">{application.totalScore.toFixed(1)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Submitted On</p>
-                      <p className="font-medium">{formatDate(application.submittedAt)}</p>
-                    </div>
-
-                    {application.rank && application.status === 'admitted' && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Merit Rank</p>
-                        <p className="font-semibold">#{application.rank}</p>
+                  <div className="flex gap-6">
+                    {application.passport_photo_url && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={application.passport_photo_url}
+                          alt="Passport photo"
+                          className="h-32 w-24 rounded-lg object-cover shadow-md"
+                        />
                       </div>
                     )}
-
-                    {application.admissionRound && (
+                    
+                    <div className="grid flex-1 gap-4 md:grid-cols-2">
                       <div>
-                        <p className="text-sm text-muted-foreground">Admission Round</p>
-                        <p className="font-medium">Round {application.admissionRound}</p>
+                        <p className="text-sm text-muted-foreground">Full Name</p>
+                        <p className="font-medium">{application.full_name}</p>
                       </div>
-                    )}
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">{application.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Program</p>
+                        <p className="font-medium">{application.programs?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Admission Type</p>
+                        <p className="font-medium capitalize">{application.admission_type?.replace('_', ' ')}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Score</p>
+                        <p className="font-semibold text-accent-foreground">{application.total_score}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Submitted On</p>
+                        <p className="font-medium">{formatDate(application.submitted_at)}</p>
+                      </div>
+
+                      {application.matriculation_number && application.status === 'admitted' && (
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-muted-foreground">Matriculation Number</p>
+                          <p className="font-bold text-primary text-lg">{application.matriculation_number}</p>
+                        </div>
+                      )}
+
+                      {application.rank && application.status === 'admitted' && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Merit Rank</p>
+                          <p className="font-semibold">#{application.rank}</p>
+                        </div>
+                      )}
+
+                      {application.admission_round && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Admission Round</p>
+                          <p className="font-medium">Round {application.admission_round}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Scholarship Status */}
-                  {application.scholarshipStatus && application.status === 'admitted' && (
+                  {application.scholarship_status && application.status === 'admitted' && (
                     <div className="mt-6 rounded-lg border border-accent/20 bg-accent/5 p-4">
                       <div className="flex items-center gap-3">
                         <Award className="h-5 w-5 text-accent" />
                         <div>
                           <p className="font-semibold">Scholarship Status</p>
                           <p className="text-sm text-muted-foreground capitalize">
-                            {application.scholarshipStatus === 'awarded' 
+                            {application.scholarship_status === 'awarded' 
                               ? 'Congratulations! You have been awarded a merit scholarship.'
-                              : application.scholarshipStatus === 'eligible'
+                              : application.scholarship_status === 'eligible'
                               ? 'You are eligible for scholarship consideration.'
                               : 'Not eligible for scholarship.'}
                           </p>
@@ -217,12 +316,33 @@ export default function StatusPage() {
                     </div>
                   )}
 
-                  {/* Download Admission Letter */}
-                  {application.status === 'admitted' && (
-                    <div className="mt-6">
-                      <Button variant="outline" className="w-full">
-                        <Download className="h-4 w-4" />
-                        Download Admission Letter
+                  {/* Download/View Admission Letter */}
+                  {application.status === 'admitted' && application.matriculation_number && (
+                    <div className="mt-6 flex gap-4">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => setShowLetterPreview(true)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Admission Letter
+                      </Button>
+                      <Button 
+                        className="flex-1"
+                        onClick={handleDownloadPDF}
+                        disabled={generatingPdf}
+                      >
+                        {generatingPdf ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4" />
+                            Download PDF
+                          </>
+                        )}
                       </Button>
                     </div>
                   )}
@@ -245,7 +365,7 @@ export default function StatusPage() {
                       </div>
                       <div>
                         <p className="font-medium">Application Submitted</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(application.submittedAt)}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(application.submitted_at)}</p>
                       </div>
                     </div>
 
@@ -273,7 +393,7 @@ export default function StatusPage() {
                         <p className="font-medium">Results Announced</p>
                         <p className="text-sm text-muted-foreground">
                           {['admitted', 'waitlisted', 'rejected'].includes(application.status)
-                            ? formatDate(application.updatedAt)
+                            ? formatDate(application.updated_at)
                             : 'Pending'}
                         </p>
                       </div>
@@ -285,6 +405,60 @@ export default function StatusPage() {
           )}
         </div>
       </main>
+
+      {/* Admission Letter Preview Modal */}
+      <Dialog open={showLetterPreview} onOpenChange={setShowLetterPreview}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Admission Letter
+            </DialogTitle>
+            <DialogDescription>
+              Your official admission letter
+            </DialogDescription>
+          </DialogHeader>
+          
+          {application && (
+            <>
+              <div className="border rounded-lg overflow-hidden">
+                <AdmissionLetter
+                  studentName={application.full_name}
+                  programName={application.programs?.name || 'Unknown Program'}
+                  programCode={application.programs?.code || 'N/A'}
+                  matriculationNumber={application.matriculation_number || 'N/A'}
+                  passportPhotoUrl={application.passport_photo_url}
+                  admissionRound={application.admission_round}
+                  scholarshipStatus={application.scholarship_status}
+                  dateOfAdmission={application.updated_at || new Date().toISOString()}
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowLetterPreview(false)}>
+                  Close
+                </Button>
+                <Button 
+                  onClick={handleDownloadPDF}
+                  disabled={generatingPdf}
+                >
+                  {generatingPdf ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      Download PDF
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

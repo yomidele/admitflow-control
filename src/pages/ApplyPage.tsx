@@ -8,13 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAdmission } from '@/contexts/AdmissionContext';
+import { PassportPhotoUpload } from '@/components/PassportPhotoUpload';
+import { supabase } from '@/integrations/supabase/client';
 import { AdmissionType } from '@/types/admission';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 const steps = [
   { label: 'Personal Info', description: 'Basic details' },
+  { label: 'Verification', description: 'NIN & Photo' },
   { label: 'Academic Info', description: 'Grades & scores' },
   { label: 'Program Selection', description: 'Choose program' },
   { label: 'Review & Submit', description: 'Confirm details' },
@@ -22,13 +25,15 @@ const steps = [
 
 export default function ApplyPage() {
   const navigate = useNavigate();
-  const { programs, adminSettings, addApplication } = useAdmission();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
     dateOfBirth: '',
+    nin: '',
+    passportPhotoUrl: '',
     gpa: '',
     testScore: '',
     programId: '',
@@ -36,9 +41,37 @@ export default function ApplyPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const isLocked = adminSettings.applicationsLocked;
-  const deadline = new Date(adminSettings.applicationDeadline);
-  const isDeadlinePassed = new Date() > deadline;
+  // Fetch programs from database
+  const { data: programs = [], isLoading: programsLoading } = useQuery({
+    queryKey: ['programs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch admin settings
+  const { data: adminSettings } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('*')
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    },
+  });
+
+  const isLocked = adminSettings?.applications_locked;
+  const deadline = adminSettings?.application_deadline ? new Date(adminSettings.application_deadline) : null;
+  const isDeadlinePassed = deadline ? new Date() > deadline : false;
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -63,17 +96,25 @@ export default function ApplyPage() {
     }
 
     if (currentStep === 1) {
+      if (!formData.nin.trim()) newErrors.nin = 'NIN is required';
+      else if (!/^\d{11}$/.test(formData.nin.replace(/\s/g, ''))) {
+        newErrors.nin = 'NIN must be exactly 11 digits';
+      }
+      if (!formData.passportPhotoUrl) newErrors.passportPhotoUrl = 'Passport photograph is required';
+    }
+
+    if (currentStep === 2) {
       const gpa = parseFloat(formData.gpa);
       const testScore = parseFloat(formData.testScore);
       if (!formData.gpa || isNaN(gpa) || gpa < 0 || gpa > 4) {
         newErrors.gpa = 'GPA must be between 0 and 4';
       }
-      if (!formData.testScore || isNaN(testScore) || testScore < 0 || testScore > 100) {
-        newErrors.testScore = 'Test score must be between 0 and 100';
+      if (!formData.testScore || isNaN(testScore) || testScore < 0 || testScore > 200) {
+        newErrors.testScore = 'Test score must be between 0 and 200';
       }
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       if (!formData.programId) newErrors.programId = 'Please select a program';
     }
 
@@ -91,31 +132,54 @@ export default function ApplyPage() {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateStep()) return;
 
-    const application = addApplication({
-      studentId: crypto.randomUUID(),
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      dateOfBirth: formData.dateOfBirth,
-      programId: formData.programId,
-      admissionType: formData.admissionType,
-      gpa: parseFloat(formData.gpa),
-      testScore: parseFloat(formData.testScore),
-    });
+    setIsSubmitting(true);
 
-    toast.success('Application submitted successfully!', {
-      description: `Application ID: ${application.id.slice(0, 8).toUpperCase()}`,
-    });
+    try {
+      // Generate a student ID
+      const studentId = `STU-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    navigate('/status', { state: { email: formData.email } });
+      const { data, error } = await supabase
+        .from('applications')
+        .insert({
+          student_id: studentId,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          date_of_birth: formData.dateOfBirth,
+          nin: formData.nin,
+          passport_photo_url: formData.passportPhotoUrl,
+          program_id: formData.programId,
+          admission_type: formData.admissionType,
+          gpa: parseFloat(formData.gpa),
+          test_score: parseInt(formData.testScore),
+          status: 'submitted',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Application submitted successfully!', {
+        description: `Application ID: ${data.id.slice(0, 8).toUpperCase()}`,
+      });
+
+      navigate('/status', { state: { email: formData.email } });
+    } catch (error: any) {
+      console.error('Submit error:', error);
+      toast.error('Failed to submit application', {
+        description: error.message || 'Please try again later',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const selectedProgram = programs.find(p => p.id === formData.programId);
+  const selectedProgram = programs.find((p: any) => p.id === formData.programId);
   const calculatedScore = formData.gpa && formData.testScore 
-    ? (parseFloat(formData.gpa) * 25) + parseFloat(formData.testScore)
+    ? (parseFloat(formData.gpa) * 25) + parseInt(formData.testScore)
     : 0;
 
   if (isLocked || isDeadlinePassed) {
@@ -212,7 +276,7 @@ export default function ApplyPage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => updateField('phone', e.target.value)}
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="+234 800 000 0000"
                       className={errors.phone ? 'border-destructive' : ''}
                     />
                     {errors.phone && (
@@ -236,8 +300,37 @@ export default function ApplyPage() {
                 </div>
               )}
 
-              {/* Step 1: Academic Information */}
+              {/* Step 1: Verification (NIN & Photo) */}
               {currentStep === 1 && (
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="nin">National Identification Number (NIN) *</Label>
+                    <Input
+                      id="nin"
+                      value={formData.nin}
+                      onChange={(e) => updateField('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                      placeholder="12345678901"
+                      maxLength={11}
+                      className={errors.nin ? 'border-destructive' : ''}
+                    />
+                    {errors.nin && (
+                      <p className="text-sm text-destructive">{errors.nin}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Enter your 11-digit NIN for identity verification
+                    </p>
+                  </div>
+
+                  <PassportPhotoUpload
+                    value={formData.passportPhotoUrl}
+                    onChange={(url) => updateField('passportPhotoUrl', url)}
+                    error={errors.passportPhotoUrl}
+                  />
+                </div>
+              )}
+
+              {/* Step 2: Academic Information */}
+              {currentStep === 2 && (
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="gpa">GPA (0-4 scale) *</Label>
@@ -258,15 +351,15 @@ export default function ApplyPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="testScore">Standardized Test Score (0-100) *</Label>
+                    <Label htmlFor="testScore">Standardized Test Score (0-200) *</Label>
                     <Input
                       id="testScore"
                       type="number"
                       min="0"
-                      max="100"
+                      max="200"
                       value={formData.testScore}
                       onChange={(e) => updateField('testScore', e.target.value)}
-                      placeholder="85"
+                      placeholder="185"
                       className={errors.testScore ? 'border-destructive' : ''}
                     />
                     {errors.testScore && (
@@ -279,7 +372,7 @@ export default function ApplyPage() {
                       <div className="rounded-lg border border-accent/20 bg-accent/5 p-4">
                         <p className="text-sm text-muted-foreground">Calculated Total Score</p>
                         <p className="font-display text-2xl font-bold text-accent-foreground">
-                          {calculatedScore.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">/ 200</span>
+                          {calculatedScore.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">/ 300</span>
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           Formula: (GPA × 25) + Test Score
@@ -290,20 +383,21 @@ export default function ApplyPage() {
                 </div>
               )}
 
-              {/* Step 2: Program Selection */}
-              {currentStep === 2 && (
+              {/* Step 3: Program Selection */}
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <Label>Select Program *</Label>
                     <Select
                       value={formData.programId}
                       onValueChange={(value) => updateField('programId', value)}
+                      disabled={programsLoading}
                     >
                       <SelectTrigger className={errors.programId ? 'border-destructive' : ''}>
-                        <SelectValue placeholder="Choose a program" />
+                        <SelectValue placeholder={programsLoading ? 'Loading programs...' : 'Choose a program'} />
                       </SelectTrigger>
                       <SelectContent>
-                        {programs.map((program) => (
+                        {programs.map((program: any) => (
                           <SelectItem key={program.id} value={program.id}>
                             {program.name} ({program.code})
                           </SelectItem>
@@ -345,44 +439,64 @@ export default function ApplyPage() {
                 </div>
               )}
 
-              {/* Step 3: Review & Submit */}
-              {currentStep === 3 && (
+              {/* Step 4: Review & Submit */}
+              {currentStep === 4 && (
                 <div className="space-y-6">
                   <div className="rounded-lg border border-border bg-muted/30 p-6">
                     <h4 className="mb-4 font-semibold">Application Summary</h4>
                     
-                    <div className="grid gap-4 text-sm md:grid-cols-2">
-                      <div>
-                        <p className="text-muted-foreground">Full Name</p>
-                        <p className="font-medium">{formData.fullName}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Email</p>
-                        <p className="font-medium">{formData.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Phone</p>
-                        <p className="font-medium">{formData.phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Date of Birth</p>
-                        <p className="font-medium">{formData.dateOfBirth}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">GPA</p>
-                        <p className="font-medium">{formData.gpa}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Test Score</p>
-                        <p className="font-medium">{formData.testScore}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Score</p>
-                        <p className="font-semibold text-accent-foreground">{calculatedScore.toFixed(1)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Program</p>
-                        <p className="font-medium">{selectedProgram?.name}</p>
+                    <div className="flex gap-6">
+                      {formData.passportPhotoUrl && (
+                        <div className="flex-shrink-0">
+                          <img
+                            src={formData.passportPhotoUrl}
+                            alt="Passport photo"
+                            className="h-32 w-24 rounded-lg object-cover shadow-md"
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="grid flex-1 gap-4 text-sm md:grid-cols-2">
+                        <div>
+                          <p className="text-muted-foreground">Full Name</p>
+                          <p className="font-medium">{formData.fullName}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Email</p>
+                          <p className="font-medium">{formData.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Phone</p>
+                          <p className="font-medium">{formData.phone}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Date of Birth</p>
+                          <p className="font-medium">{formData.dateOfBirth}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">NIN</p>
+                          <p className="font-medium">{formData.nin.slice(0, 4)}****{formData.nin.slice(-3)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">GPA</p>
+                          <p className="font-medium">{formData.gpa}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Test Score</p>
+                          <p className="font-medium">{formData.testScore}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Total Score</p>
+                          <p className="font-semibold text-accent-foreground">{calculatedScore.toFixed(1)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Program</p>
+                          <p className="font-medium">{selectedProgram?.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Admission Type</p>
+                          <p className="font-medium capitalize">{formData.admissionType.replace('_', ' ')}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -407,7 +521,7 @@ export default function ApplyPage() {
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  disabled={currentStep === 0}
+                  disabled={currentStep === 0 || isSubmitting}
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -419,9 +533,18 @@ export default function ApplyPage() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} variant="success">
-                    <CheckCircle className="h-4 w-4" />
-                    Submit Application
+                  <Button onClick={handleSubmit} variant="success" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Submit Application
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
