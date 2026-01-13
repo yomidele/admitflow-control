@@ -116,7 +116,7 @@ export async function generateAdmissionLetterPDF(data: AdmissionLetterData): Pro
   doc.setTextColor(100, 100, 100);
   doc.text('Batch:', rightX, infoY);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Batch ${data.admissionBatch || 1}`, rightX + 15, infoY);
+  doc.text(`Batch ${String.fromCharCode(64 + (data.admissionBatch || 1))}`, rightX + 15, infoY);
 
   infoY += 7;
   doc.setFont('helvetica', 'normal');

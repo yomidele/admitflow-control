@@ -116,7 +116,7 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
             </div>
             <div>
               <p className="text-gray-500">Admission Batch</p>
-              <p className="font-semibold">Batch {admissionBatch || 1}</p>
+              <p className="font-semibold">Batch {String.fromCharCode(64 + (admissionBatch || 1))}</p>
             </div>
             <div>
               <p className="text-gray-500">Date of Admission</p>
