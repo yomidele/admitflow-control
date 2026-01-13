@@ -1,5 +1,16 @@
 import { forwardRef } from 'react';
 import { format } from 'date-fns';
+import schoolLogo from '@/assets/school-logo.png';
+import approvalStamp from '@/assets/approval-stamp.png';
+import registrarSignature from '@/assets/registrar-signature.png';
+import directorSignature from '@/assets/director-signature.png';
+
+// School Information
+const SCHOOL_NAME = "Greenfield Metropolitan University";
+const SCHOOL_MOTTO = "Excellence Through Knowledge";
+const SCHOOL_ADDRESS = "42 University Boulevard, Greenfield City, GC 10001";
+const SCHOOL_PHONE = "+234 (801) 234-5678";
+const SCHOOL_EMAIL = "admissions@greenfield.edu.ng";
 
 interface AdmissionLetterProps {
   studentName: string;
@@ -28,18 +39,21 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
   return (
     <div 
       ref={ref}
-      className="mx-auto max-w-[800px] bg-white p-8 text-black"
+      className="relative mx-auto max-w-[800px] bg-white p-8 text-black"
       style={{ fontFamily: 'Georgia, serif' }}
     >
-      {/* Header */}
+      {/* Header with Logo */}
       <div className="mb-8 border-b-4 border-primary pb-6 text-center">
-        <div className="flex items-center justify-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
-            AF
-          </div>
+        <div className="flex items-center justify-center gap-6">
+          <img 
+            src={schoolLogo} 
+            alt={`${SCHOOL_NAME} Logo`}
+            className="h-24 w-24 object-contain"
+          />
           <div>
-            <h1 className="text-3xl font-bold text-primary">AdmitFlow University</h1>
-            <p className="text-sm text-gray-600">Excellence in Education Since 1950</p>
+            <h1 className="text-2xl font-bold text-primary md:text-3xl">{SCHOOL_NAME}</h1>
+            <p className="mt-1 text-sm italic text-gray-600">"{SCHOOL_MOTTO}"</p>
+            <p className="mt-1 text-xs text-gray-500">Established 1965</p>
           </div>
         </div>
       </div>
@@ -106,7 +120,7 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
         
         <p>
           We are pleased to inform you that you have been offered admission to 
-          <strong> AdmitFlow University</strong> for the <strong>{academicYear}/{academicYear + 1}</strong> academic session.
+          <strong> {SCHOOL_NAME}</strong> for the <strong>{academicYear}/{academicYear + 1}</strong> academic session.
         </p>
 
         <p>
@@ -151,31 +165,50 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
         </p>
       </div>
 
-      {/* Signature */}
-      <div className="mb-8 flex justify-between">
-        <div>
-          <div className="h-12 border-b border-gray-400 w-48"></div>
-          <p className="mt-2 font-semibold">Prof. James O. Williams</p>
-          <p className="text-sm text-gray-600">Registrar</p>
-        </div>
-        <div className="text-right">
-          <div className="h-12 border-b border-gray-400 w-48 ml-auto"></div>
-          <p className="mt-2 font-semibold">Dr. Sarah M. Johnson</p>
-          <p className="text-sm text-gray-600">Director of Admissions</p>
+      {/* Signatures with Blue Ink */}
+      <div className="relative mb-8">
+        <div className="flex justify-between">
+          <div className="text-center">
+            <img 
+              src={registrarSignature} 
+              alt="Registrar Signature"
+              className="mx-auto h-16 w-auto object-contain"
+            />
+            <div className="mt-1 w-48 border-t border-gray-400"></div>
+            <p className="mt-2 font-semibold">Prof. James O. Williams</p>
+            <p className="text-sm text-gray-600">Registrar</p>
+          </div>
+          
+          {/* Approval Stamp - positioned in center-right */}
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 rotate-[-8deg] opacity-90">
+            <img 
+              src={approvalStamp} 
+              alt="Approval Stamp"
+              className="h-28 w-28 object-contain"
+            />
+          </div>
+          
+          <div className="text-center">
+            <img 
+              src={directorSignature} 
+              alt="Director Signature"
+              className="mx-auto h-16 w-auto object-contain"
+            />
+            <div className="mt-1 w-48 border-t border-gray-400"></div>
+            <p className="mt-2 font-semibold">Dr. Sarah M. Johnson</p>
+            <p className="text-sm text-gray-600">Director of Admissions</p>
+          </div>
         </div>
       </div>
 
       {/* Footer */}
       <div className="border-t-2 border-gray-300 pt-4 text-center text-xs text-gray-500">
-        <p>
-          AdmitFlow University • 123 Academic Avenue, Education City • 
-          Tel: +1 (555) 123-4567 • Email: admissions@admitflow.edu
-        </p>
-        <p className="mt-2 italic">
-          "This is a computer-generated admission letter and is valid without signature."
-        </p>
+        <p className="font-semibold text-gray-700">{SCHOOL_NAME}</p>
         <p className="mt-1">
-          Verification Code: AF-{matriculationNumber.replace(/\//g, '-')}-{academicYear}
+          {SCHOOL_ADDRESS} • Tel: {SCHOOL_PHONE} • Email: {SCHOOL_EMAIL}
+        </p>
+        <p className="mt-2">
+          Verification Code: GMU-{matriculationNumber.replace(/\//g, '-')}-{academicYear}
         </p>
       </div>
     </div>

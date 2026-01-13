@@ -1,7 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, Menu, X, Shield } from 'lucide-react';
+import { Menu, X, Shield } from 'lucide-react';
 import { useState } from 'react';
+import schoolLogo from '@/assets/school-logo.png';
+
+// School Information - centralized for consistency
+export const SCHOOL_NAME = "Greenfield Metropolitan University";
+export const SCHOOL_SHORT_NAME = "GMU";
 
 export function Header() {
   const location = useLocation();
@@ -19,11 +24,13 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <img 
+            src={schoolLogo} 
+            alt={`${SCHOOL_NAME} Logo`}
+            className="h-12 w-12 object-contain"
+          />
           <div className="flex flex-col">
-            <span className="font-display text-lg font-bold text-foreground">AdmitFlow</span>
+            <span className="font-display text-lg font-bold text-foreground">{SCHOOL_SHORT_NAME}</span>
             <span className="text-xs text-muted-foreground">Admission Portal</span>
           </div>
         </Link>
