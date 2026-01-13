@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { GraduationCap, Menu, X } from 'lucide-react';
+import { GraduationCap, Menu, X, Shield } from 'lucide-react';
 import { useState } from 'react';
 
 export function Header() {
@@ -13,7 +13,6 @@ export function Header() {
     { path: '/', label: 'Home' },
     { path: '/apply', label: 'Apply Now' },
     { path: '/status', label: 'Check Status' },
-    { path: '/admin', label: 'Admin' },
   ];
 
   return (
@@ -42,6 +41,18 @@ export function Header() {
               </Button>
             </Link>
           ))}
+          <div className="ml-2 border-l border-border pl-3">
+            <Link to="/admin/login">
+              <Button
+                variant={location.pathname.startsWith('/admin') ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5"
+              >
+                <Shield className="h-4 w-4" />
+                Admin Portal
+              </Button>
+            </Link>
+          </div>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -73,6 +84,20 @@ export function Header() {
                 </Button>
               </Link>
             ))}
+            <div className="mt-2 border-t border-border pt-2">
+              <Link 
+                to="/admin/login"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Button
+                  variant={location.pathname.startsWith('/admin') ? 'default' : 'outline'}
+                  className="w-full justify-start gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin Portal
+                </Button>
+              </Link>
+            </div>
           </nav>
         </div>
       )}
