@@ -7,7 +7,7 @@ interface AdmissionLetterData {
   programCode: string;
   matriculationNumber: string;
   passportPhotoUrl?: string;
-  admissionRound?: number;
+  admissionBatch?: number;
   scholarshipStatus?: string;
   dateOfAdmission: string;
 }
@@ -114,9 +114,9 @@ export async function generateAdmissionLetterPDF(data: AdmissionLetterData): Pro
   infoY += 7;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text('Round:', rightX, infoY);
+  doc.text('Batch:', rightX, infoY);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Round ${data.admissionRound || 1}`, rightX + 15, infoY);
+  doc.text(`Batch ${data.admissionBatch || 1}`, rightX + 15, infoY);
 
   infoY += 7;
   doc.setFont('helvetica', 'normal');

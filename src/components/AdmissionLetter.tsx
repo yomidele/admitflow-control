@@ -18,7 +18,7 @@ interface AdmissionLetterProps {
   programCode: string;
   matriculationNumber: string;
   passportPhotoUrl?: string;
-  admissionRound?: number;
+  admissionBatch?: number;
   scholarshipStatus?: string;
   dateOfAdmission: string;
 }
@@ -29,7 +29,7 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
   programCode,
   matriculationNumber,
   passportPhotoUrl,
-  admissionRound,
+  admissionBatch,
   scholarshipStatus,
   dateOfAdmission,
 }, ref) => {
@@ -115,8 +115,8 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
               <p className="font-semibold">{programCode}</p>
             </div>
             <div>
-              <p className="text-gray-500">Admission Round</p>
-              <p className="font-semibold">Round {admissionRound || 1}</p>
+              <p className="text-gray-500">Admission Batch</p>
+              <p className="font-semibold">Batch {admissionBatch || 1}</p>
             </div>
             <div>
               <p className="text-gray-500">Date of Admission</p>
