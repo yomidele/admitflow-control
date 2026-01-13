@@ -39,9 +39,21 @@ export const AdmissionLetter = forwardRef<HTMLDivElement, AdmissionLetterProps>(
   return (
     <div 
       ref={ref}
-      className="relative mx-auto max-w-[800px] bg-white p-8 text-black"
+      className="relative mx-auto max-w-[800px] bg-white p-8 text-black overflow-hidden"
       style={{ fontFamily: 'Georgia, serif' }}
     >
+      {/* Watermark */}
+      <div 
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        aria-hidden="true"
+      >
+        <img 
+          src={schoolLogo} 
+          alt=""
+          className="h-[500px] w-[500px] object-contain opacity-[0.04]"
+        />
+      </div>
+
       {/* Header with Logo */}
       <div className="mb-8 border-b-4 border-primary pb-6 text-center">
         <div className="flex items-center justify-center gap-6">
