@@ -290,7 +290,7 @@ export default function AdminDashboard() {
         programCode: app.programs?.code || 'N/A',
         matriculationNumber: app.matriculation_number,
         passportPhotoUrl: app.passport_photo_url,
-        admissionRound: app.admission_round,
+        admissionBatch: app.admission_round,
         scholarshipStatus: app.scholarship_status,
         dateOfAdmission: app.updated_at || new Date().toISOString(),
       });
@@ -680,7 +680,7 @@ export default function AdminDashboard() {
                   programCode={selectedApplication.programs?.code || 'N/A'}
                   matriculationNumber={selectedApplication.matriculation_number || 'N/A'}
                   passportPhotoUrl={selectedApplication.passport_photo_url}
-                  admissionRound={selectedApplication.admission_round}
+                  admissionBatch={selectedApplication.admission_round}
                   scholarshipStatus={selectedApplication.scholarship_status}
                   dateOfAdmission={selectedApplication.updated_at || new Date().toISOString()}
                 />

@@ -124,7 +124,7 @@ export default function StatusPage() {
         programCode: application.programs?.code || 'N/A',
         matriculationNumber: application.matriculation_number,
         passportPhotoUrl: application.passport_photo_url,
-        admissionRound: application.admission_round,
+        admissionBatch: application.admission_round,
         scholarshipStatus: application.scholarship_status,
         dateOfAdmission: application.updated_at || new Date().toISOString(),
       });
@@ -428,7 +428,7 @@ export default function StatusPage() {
                   programCode={application.programs?.code || 'N/A'}
                   matriculationNumber={application.matriculation_number || 'N/A'}
                   passportPhotoUrl={application.passport_photo_url}
-                  admissionRound={application.admission_round}
+                  admissionBatch={application.admission_round}
                   scholarshipStatus={application.scholarship_status}
                   dateOfAdmission={application.updated_at || new Date().toISOString()}
                 />
