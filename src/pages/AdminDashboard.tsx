@@ -188,8 +188,8 @@ export default function AdminDashboard() {
         for (const app of programApps) {
           if (app.status === 'submitted') {
             await supabase
-              .from('applications')
-              .update({ status: 'selection_pending' })
+              .from('applications' as any)
+              .update({ status: 'selection_pending' } as any)
               .eq('id', app.id);
           }
         }
