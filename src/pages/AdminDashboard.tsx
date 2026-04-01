@@ -79,7 +79,7 @@ export default function AdminDashboard() {
         .select('*');
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
