@@ -169,10 +169,10 @@ export default function AdminDashboard() {
 
             // Update application
             await supabase
-              .from('applications')
+              .from('applications' as any)
               .update({
                 status: 'selection_pending',
-                rank: program.slots - slotsRemaining + 1,
+                rank: (program as any).slots - slotsRemaining + 1,
                 admission_round: roundIndex + 1,
                 matriculation_number: matricNum,
                 scholarship_status: app.total_score >= 190 ? 'eligible' : 'not_eligible',
