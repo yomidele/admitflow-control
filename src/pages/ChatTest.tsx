@@ -13,7 +13,7 @@ const ChatTest = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from("sites" as any).select("*").eq("id", siteId!).single();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!siteId,
   });

@@ -49,7 +49,7 @@ export function PaymentConfirmationCard({ confirmation, onSuccess }: PaymentConf
   const rejectPaymentMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from("payment_confirmations")
+        .from("payment_confirmations" as any)
         .update({
           status: "rejected",
           rejection_reason: rejectReason,

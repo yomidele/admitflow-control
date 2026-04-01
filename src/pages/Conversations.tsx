@@ -39,9 +39,9 @@ const Conversations = () => {
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ["conversation-messages", selectedConvoId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("chat_messages").select("*").eq("conversation_id", selectedConvoId!).order("created_at", { ascending: true });
+      const { data, error } = await supabase.from("chat_messages" as any).select("*").eq("conversation_id" as any, selectedConvoId!).order("created_at", { ascending: true });
       if (error) throw error;
-      return data;
+      return data as any[];
     },
     enabled: !!selectedConvoId,
   });
