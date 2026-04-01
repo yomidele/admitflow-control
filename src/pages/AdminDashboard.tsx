@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         .single();
       
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return data as any;
     },
   });
 
