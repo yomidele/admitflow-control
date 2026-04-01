@@ -196,7 +196,7 @@ export default function AdminDashboard() {
       }
 
       // Create selection run record
-      await supabase.from('selection_runs').insert({
+      await supabase.from('selection_runs' as any).insert({
         scheduled_at: new Date().toISOString(),
         executed_at: new Date().toISOString(),
         status: 'completed',
