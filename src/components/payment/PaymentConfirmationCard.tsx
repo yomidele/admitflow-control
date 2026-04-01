@@ -32,8 +32,8 @@ export function PaymentConfirmationCard({ confirmation, onSuccess }: PaymentConf
       if (updateError) throw updateError;
 
       const { error: orderError } = await supabase
-        .from("orders")
-        .update({ payment_status: "paid" })
+        .from("orders" as any)
+        .update({ payment_status: "paid" } as any)
         .eq("id", confirmation.order_id);
 
       if (orderError) throw orderError;
