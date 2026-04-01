@@ -25,8 +25,8 @@ export function PaymentConfirmationCard({ confirmation, onSuccess }: PaymentConf
   const confirmPaymentMutation = useMutation({
     mutationFn: async () => {
       const { error: updateError } = await supabase
-        .from("payment_confirmations")
-        .update({ status: "confirmed", reviewed_at: new Date().toISOString() })
+        .from("payment_confirmations" as any)
+        .update({ status: "confirmed", reviewed_at: new Date().toISOString() } as any)
         .eq("id", confirmation.id);
 
       if (updateError) throw updateError;
