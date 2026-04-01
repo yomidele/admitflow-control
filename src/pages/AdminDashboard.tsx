@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <Label>Release Results</Label>
                   <Button 
-                    variant="success"
+                    variant="default"
                     onClick={() => releaseMutation.mutate()}
                     className="w-full"
                     disabled={stats.pending === 0 || releaseMutation.isPending}
