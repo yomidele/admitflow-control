@@ -163,7 +163,7 @@ export default function AdminDashboard() {
             if (app.status !== 'submitted') continue;
 
             // Generate matriculation number
-            const { data: matricNum } = await supabase.rpc('generate_matriculation_number', {
+            const { data: matricNum } = await (supabase.rpc as any)('generate_matriculation_number', {
               p_program_id: program.id
             });
 
