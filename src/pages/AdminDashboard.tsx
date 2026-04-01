@@ -75,7 +75,7 @@ export default function AdminDashboard() {
     queryKey: ['programs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('programs')
+        .from('programs' as any)
         .select('*');
       
       if (error) throw error;
