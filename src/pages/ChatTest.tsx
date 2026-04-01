@@ -11,7 +11,7 @@ const ChatTest = () => {
   const { data: site, isLoading } = useQuery({
     queryKey: ["site", siteId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").eq("id", siteId!).single();
+      const { data, error } = await supabase.from("sites" as any).select("*").eq("id", siteId!).single();
       if (error) throw error;
       return data;
     },
