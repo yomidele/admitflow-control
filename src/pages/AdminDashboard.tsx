@@ -101,8 +101,8 @@ export default function AdminDashboard() {
   const updateDeadlineMutation = useMutation({
     mutationFn: async (newDeadline: string) => {
       const { error } = await supabase
-        .from('admin_settings')
-        .update({ application_deadline: newDeadline })
+        .from('admin_settings' as any)
+        .update({ application_deadline: newDeadline } as any)
         .eq('id', adminSettings?.id);
       
       if (error) throw error;
