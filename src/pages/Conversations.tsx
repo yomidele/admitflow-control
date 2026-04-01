@@ -28,11 +28,11 @@ const Conversations = () => {
   const { data: conversations, isLoading: loadingConvos } = useQuery({
     queryKey: ["conversations", selectedSiteId],
     queryFn: async () => {
-      let query = supabase.from("conversations").select("*, sites(name, url)").order("updated_at", { ascending: false }).limit(100);
+      let query = (supabase.from("conversations" as any) as any).select("*, sites(name, url)").order("updated_at", { ascending: false }).limit(100);
       if (selectedSiteId !== "all") query = query.eq("site_id", selectedSiteId);
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
