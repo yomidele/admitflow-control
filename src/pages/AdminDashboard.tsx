@@ -151,7 +151,7 @@ export default function AdminDashboard() {
           .filter((a: any) => a.program_id === program.id)
           .sort((a: any, b: any) => b.total_score - a.total_score);
 
-        let slotsRemaining = program.slots;
+        let slotsRemaining = (program as any).slots;
         const cutoffs = [180, 170, 160, 150];
 
         for (let roundIndex = 0; roundIndex < cutoffs.length && slotsRemaining > 0; roundIndex++) {
