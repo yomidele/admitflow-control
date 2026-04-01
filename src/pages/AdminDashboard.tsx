@@ -128,7 +128,7 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-      toast.success(adminSettings?.applications_locked ? 'Applications unlocked' : 'Applications locked');
+      toast.success((adminSettings as any)?.applications_locked ? 'Applications unlocked' : 'Applications locked');
     },
     onError: (error: any) => {
       toast.error('Failed to toggle lock', { description: error.message });
