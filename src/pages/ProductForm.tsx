@@ -71,7 +71,7 @@ const ProductForm = ({ onSuccess, onCancel }: ProductFormProps) => {
         throw new Error("Please upload a product image");
       }
 
-      const { data, error } = await supabase.from("products").insert({
+      const { data, error } = await supabase.from("products" as any).insert({
         site_id: siteId,
         name: formData.name,
         description: formData.description,

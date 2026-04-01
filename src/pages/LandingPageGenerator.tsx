@@ -34,7 +34,7 @@ const LandingPageGenerator = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").order("name");
+      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
       if (error) throw error;
       return data;
     },
@@ -46,7 +46,7 @@ const LandingPageGenerator = () => {
     enabled: !!selectedSiteId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("products")
+        .from("products" as any)
         .select("id, name, price, image_url, description")
         .eq("site_id", selectedSiteId);
       if (error) throw error;
@@ -61,7 +61,7 @@ const LandingPageGenerator = () => {
     queryFn: async () => {
       if (!selectedSiteId) return [];
       const { data, error } = await supabase
-        .from("landing_pages")
+        .from("landing_pages" as any)
         .select("*")
         .eq("site_id", selectedSiteId)
         .order("created_at", { ascending: false })

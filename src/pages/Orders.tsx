@@ -18,7 +18,7 @@ const Orders = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").order("name");
+      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
       if (error) throw error;
       return data;
     },
@@ -27,7 +27,7 @@ const Orders = () => {
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", selectedSiteId],
     queryFn: async () => {
-      let query = supabase.from("orders").select("*, sites(name, currency), products(name, image_url)").order("created_at", { ascending: false });
+      let query = supabase.from("orders" as any).select("*, sites(name, currency), products(name, image_url)").order("created_at", { ascending: false });
       if (selectedSiteId !== "all") query = query.eq("site_id", selectedSiteId);
       const { data, error } = await query;
       if (error) throw error;
