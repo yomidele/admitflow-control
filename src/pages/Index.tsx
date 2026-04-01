@@ -1,247 +1,120 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { FeatureCard } from '@/components/FeatureCard';
-import { CountdownTimer } from '@/components/CountdownTimer';
-import { useAdmission } from '@/contexts/AdmissionContext';
-import { 
-  GraduationCap, 
-  Shield, 
-  Clock, 
-  BarChart3, 
-  Bell, 
-  FileCheck,
-  ArrowRight,
-  CheckCircle2,
-  Users,
-  Award
-} from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Users, Globe, ShoppingCart, Code, Zap, Shield, ArrowRight, BarChart3, MessageSquare } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function Index() {
-  const { adminSettings, programs } = useAdmission();
-
-  const features = [
-    {
-      icon: Shield,
-      title: 'Fair & Transparent',
-      description: 'Automated selection based on predefined academic criteria. No human interference in ranking.',
-    },
-    {
-      icon: Clock,
-      title: 'Timely Process',
-      description: 'Clear deadlines and scheduled result releases. Know exactly when to expect outcomes.',
-    },
-    {
-      icon: BarChart3,
-      title: 'Multi-Round Selection',
-      description: 'Progressive cutoff system ensures maximum slots are filled fairly.',
-    },
-    {
-      icon: Bell,
-      title: 'Instant Notifications',
-      description: 'Receive email updates at every stage of your application journey.',
-    },
-    {
-      icon: FileCheck,
-      title: 'Document Verification',
-      description: 'Secure document upload with automated verification checks.',
-    },
-    {
-      icon: Award,
-      title: 'Scholarship Integration',
-      description: 'Automatic scholarship consideration for qualifying candidates.',
-    },
-  ];
-
-  const stats = [
-    { value: '50K+', label: 'Applications Processed' },
-    { value: '5K+', label: 'Students Admitted' },
-    { value: '15+', label: 'Programs Offered' },
-    { value: '99.9%', label: 'System Uptime' },
-  ];
-
+const Index = () => {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-hero-gradient py-20 md:py-32">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
-          <div className="absolute -bottom-20 -right-20 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
-        </div>
-        
-        <div className="container relative">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="animate-fade-in">
-              <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-4 py-1.5 text-sm text-primary-foreground backdrop-blur-sm">
-                <GraduationCap className="h-4 w-4" />
-                Admissions Open for 2026
-              </span>
+    <div className="min-h-screen bg-background">
+      {/* Nav */}
+      <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
+              <Users className="h-4 w-4 text-primary-foreground" />
             </div>
-            
-            <h1 className="animate-slide-up mt-6 font-display text-4xl font-bold tracking-tight text-primary-foreground md:text-6xl">
-              Your Future Starts with a{' '}
-              <span className="text-gradient-gold">Fair Admission</span>
+            <span className="font-semibold text-sm sm:text-base">AI Sales Rep</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild><Link to="/login">Sign in</Link></Button>
+            <Button size="sm" asChild><Link to="/signup">Get Started <ArrowRight className="ml-1 h-3 w-3" /></Link></Button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="border-b">
+        <div className="container py-16 sm:py-24 md:py-32 max-w-4xl text-center px-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-xs text-muted-foreground mb-6 sm:mb-8">
+              <Zap className="h-3 w-3 text-primary" />
+              AI-powered digital sales workforce
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 sm:mb-5 leading-[1.1]">
+              Deploy an AI Sales Rep for
+              <span className="text-primary"> every business</span>
             </h1>
-            
-            <p className="animate-slide-up mt-6 text-lg text-primary-foreground/80 md:text-xl">
-              Experience a fully automated, transparent admission process. No bias, no delays — just merit-based selection with clear timelines.
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed px-2">
+              Not a chatbot — a trained digital salesperson that discovers products, closes deals, and processes payments 24/7 inside the conversation.
             </p>
-            
-            <div className="animate-slide-up mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/apply">
-                <Button variant="hero" size="xl">
-                  Apply Now
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/status">
-                <Button variant="heroOutline" size="xl">
-                  Check Application Status
-                </Button>
-              </Link>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Button size="lg" asChild><Link to="/signup">Start Free <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
+              <Button size="lg" variant="outline" asChild><Link to="/login">Sign in</Link></Button>
             </div>
-          </div>
-
-          {/* Countdown Timer */}
-          <div className="animate-fade-in mt-16 rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5 p-8 backdrop-blur-sm">
-            <CountdownTimer 
-              targetDate={adminSettings.applicationDeadline} 
-              label="Application Deadline" 
-            />
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="border-b border-border bg-muted/30 py-12">
-        <div className="container">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="font-display text-3xl font-bold text-primary md:text-4xl">{stat.value}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
+      {/* Features */}
+      <section className="border-b">
+        <div className="container py-16 sm:py-20 px-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3">How it works</h2>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">Three steps to deploy your AI Sales Rep</p>
           </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold md:text-4xl">
-              Why Choose Our Admission System?
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Built for fairness, designed for efficiency. Our automated system ensures every applicant is evaluated objectively.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <FeatureCard key={feature.title} {...feature} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Programs Section */}
-      <section className="bg-muted/30 py-20">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold md:text-4xl">
-              Available Programs
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Choose from our diverse range of undergraduate and graduate programs.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {programs.map((program) => (
-              <div
-                key={program.id}
-                className="rounded-xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:shadow-xl"
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                    {program.code}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{program.slots} slots</span>
-                </div>
-                <h3 className="font-display text-lg font-semibold">{program.name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{program.description}</p>
-                <div className="mt-4 flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>Cutoff Score: {program.cutoff}+</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-20">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold md:text-4xl">
-              How It Works
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              A simple, transparent process from application to admission.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-8 md:grid-cols-4">
+          <div className="grid gap-4 sm:gap-px md:grid-cols-3 max-w-4xl mx-auto sm:border sm:rounded-lg sm:overflow-hidden sm:bg-border">
             {[
-              { step: 1, title: 'Submit Application', description: 'Fill out the online form with your academic details and documents.' },
-              { step: 2, title: 'Application Review', description: 'Your application is locked and queued for the selection process.' },
-              { step: 3, title: 'Automated Selection', description: 'Merit-based ranking with multi-round cutoff evaluation.' },
-              { step: 4, title: 'Results Released', description: 'Receive your admission status and next steps via email.' },
-            ].map((item, index) => (
-              <div key={item.step} className="relative text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent text-2xl font-bold text-accent-foreground shadow-gold">
-                  {item.step}
+              { icon: Globe, title: "Connect your business", desc: "Add your website URL. We crawl and extract your products, prices, and services automatically." },
+              { icon: MessageSquare, title: "AI learns to sell", desc: "Your Sales Rep builds a product catalog and learns how to recommend, upsell, and close deals." },
+              { icon: ShoppingCart, title: "Customers buy in chat", desc: "Deploy on your website or landing page. Customers discover, order, and pay — all inside the conversation." },
+            ].map((feature, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-background p-6 sm:p-8 border sm:border-0 rounded-lg sm:rounded-none"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+                  <feature.icon className="h-5 w-5 text-foreground" />
                 </div>
-                {index < 3 && (
-                  <div className="absolute left-[calc(50%+40px)] top-8 hidden h-0.5 w-[calc(100%-80px)] bg-border md:block" />
-                )}
-                <h3 className="mt-4 font-display text-lg font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+                <h3 className="font-semibold mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust */}
+      <section className="border-b">
+        <div className="container py-10 sm:py-12 px-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
+            {[
+              { icon: Shield, text: "Enterprise-grade security" },
+              { icon: Zap, text: "Sub-2s response times" },
+              { icon: BarChart3, text: "Sales analytics" },
+              { icon: Users, text: "Multi-tenant isolation" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <item.icon className="h-4 w-4 text-primary" />
+                <span className="text-xs sm:text-sm">{item.text}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-hero-gradient py-20">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold text-primary-foreground md:text-4xl">
-              Ready to Begin Your Journey?
-            </h2>
-            <p className="mt-4 text-primary-foreground/80">
-              Join thousands of successful applicants who trusted our fair, automated admission process.
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link to="/apply">
-                <Button variant="hero" size="xl">
-                  Start Your Application
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+      {/* CTA */}
+      <section className="border-b">
+        <div className="container py-16 sm:py-20 text-center px-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">Ready to deploy your AI Sales Rep?</h2>
+          <p className="text-muted-foreground text-sm mb-8 max-w-md mx-auto">
+            Turn website visitors into paying customers. No coding required.
+          </p>
+          <Button size="lg" asChild><Link to="/signup">Create free account <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
         </div>
       </section>
 
-      <Footer />
+      {/* Footer */}
+      <footer className="py-6 px-4">
+        <div className="container text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} AI Sales Rep Platform. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
-}
+};
+
+export default Index;
