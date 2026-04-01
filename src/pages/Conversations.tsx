@@ -19,9 +19,9 @@ const Conversations = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").order("name");
+      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
