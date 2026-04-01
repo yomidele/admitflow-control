@@ -30,7 +30,7 @@ const Products = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
+      const { data, error } = await supabase.from("sites").select("*").order("name");
       if (error) throw error;
       return data;
     },
@@ -39,7 +39,7 @@ const Products = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ["products", selectedSiteId],
     queryFn: async () => {
-      let query = supabase.from("products" as any).select("*, sites(name, currency)").order("created_at", { ascending: false });
+      let query = supabase.from("products").select("*, sites(name, currency)").order("created_at", { ascending: false });
       if (selectedSiteId !== "all") query = query.eq("site_id", selectedSiteId);
       const { data, error } = await query;
       if (error) throw error;
@@ -53,13 +53,13 @@ const Products = () => {
     const fileName = `${siteId}/${timestamp}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("product-images" as any)
+      .from("product-images")
       .upload(fileName, file, { contentType: file.type, cacheControl: "3600" });
 
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
     const { data: urlData } = supabase.storage
-      .from("product-images" as any)
+      .from("product-images")
       .getPublicUrl(fileName);
 
     return urlData.publicUrl;
@@ -101,11 +101,11 @@ const Products = () => {
       };
 
       if (editProduct) {
-        const { error } = await supabase.from("products" as any).update(payload).eq("id", editProduct.id);
+        const { error } = await supabase.from("products").update(payload).eq("id", editProduct.id);
         if (error) throw new Error(`Update failed: ${error.message}`);
       } else {
         payload.site_id = siteId;
-        const { error } = await supabase.from("products" as any).insert(payload as any);
+        const { error } = await supabase.from("products").insert(payload as any);
         if (error) throw new Error(`Insert failed: ${error.message}`);
       }
     },
@@ -120,7 +120,7 @@ const Products = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products" as any).delete().eq("id", id);
+      const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["products"] }); toast({ title: "Product deleted" }); },

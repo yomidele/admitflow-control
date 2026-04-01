@@ -29,7 +29,7 @@ export function ManualPaymentForm({ sites, onSuccess }: ManualPaymentFormProps) 
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("manual_payment_config" as any).upsert({
+      const { error } = await supabase.from("manual_payment_config").upsert({
         site_id: form.site_id,
         bank_name: form.bank_name,
         account_name: form.account_name,

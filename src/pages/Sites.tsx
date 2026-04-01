@@ -89,7 +89,7 @@ const Sites = () => {
   const { data: sites, isLoading } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites" as any).select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("sites").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -97,7 +97,7 @@ const Sites = () => {
 
   const addSiteMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("sites" as any).insert({
+      const { error } = await supabase.from("sites").insert({
         name: newSiteName,
         url: newSiteUrl,
         slug: newSlug || generateSlug(newSiteName),
@@ -140,7 +140,7 @@ const Sites = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (siteId: string) => {
-      const { error } = await supabase.from("sites" as any).delete().eq("id", siteId);
+      const { error } = await supabase.from("sites").delete().eq("id", siteId);
       if (error) throw error;
     },
     onSuccess: () => {

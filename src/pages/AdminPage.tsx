@@ -297,7 +297,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   <Label>Release Results</Label>
                   <Button 
-                    variant="default"
+                    variant="success"
                     onClick={handleReleaseResults}
                     className="w-full"
                     disabled={!currentSelectionRun || currentSelectionRun.status === 'released'}

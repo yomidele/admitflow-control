@@ -19,29 +19,29 @@ const Conversations = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
+      const { data, error } = await supabase.from("sites").select("*").order("name");
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
 
   const { data: conversations, isLoading: loadingConvos } = useQuery({
     queryKey: ["conversations", selectedSiteId],
     queryFn: async () => {
-      let query = (supabase.from("conversations" as any) as any).select("*, sites(name, url)").order("updated_at", { ascending: false }).limit(100);
+      let query = supabase.from("conversations").select("*, sites(name, url)").order("updated_at", { ascending: false }).limit(100);
       if (selectedSiteId !== "all") query = query.eq("site_id", selectedSiteId);
       const { data, error } = await query;
       if (error) throw error;
-      return data as any[];
+      return data;
     },
   });
 
   const { data: messages, isLoading: loadingMessages } = useQuery({
     queryKey: ["conversation-messages", selectedConvoId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("chat_messages" as any).select("*").eq("conversation_id" as any, selectedConvoId!).order("created_at", { ascending: true });
+      const { data, error } = await supabase.from("chat_messages").select("*").eq("conversation_id", selectedConvoId!).order("created_at", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
     enabled: !!selectedConvoId,
   });

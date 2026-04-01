@@ -22,7 +22,7 @@ export function GatewayPaymentForm({ sites, onSuccess }: GatewayPaymentFormProps
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("payment_configs" as any).insert({
+      const { error } = await supabase.from("payment_configs").insert({
         site_id: form.site_id,
         provider: form.provider,
         public_key: form.public_key,

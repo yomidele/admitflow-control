@@ -8,7 +8,7 @@ const Overview = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites" as any).select("*");
+      const { data, error } = await supabase.from("sites").select("*");
       if (error) throw error;
       return data;
     },
@@ -17,7 +17,7 @@ const Overview = () => {
   const { data: products } = useQuery({
     queryKey: ["products-count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products" as any).select("id");
+      const { data, error } = await supabase.from("products").select("id");
       if (error) throw error;
       return data;
     },
@@ -26,7 +26,7 @@ const Overview = () => {
   const { data: orders } = useQuery({
     queryKey: ["orders-all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders" as any).select("*");
+      const { data, error } = await supabase.from("orders").select("*");
       if (error) throw error;
       return data;
     },
@@ -35,7 +35,7 @@ const Overview = () => {
   const { data: conversations } = useQuery({
     queryKey: ["conversations-count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("conversations" as any).select("id, created_at").order("created_at", { ascending: false }).limit(50);
+      const { data, error } = await supabase.from("conversations").select("id, created_at").order("created_at", { ascending: false }).limit(50);
       if (error) throw error;
       return data;
     },
