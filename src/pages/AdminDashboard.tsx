@@ -120,8 +120,8 @@ export default function AdminDashboard() {
   const toggleLockMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('admin_settings')
-        .update({ applications_locked: !adminSettings?.applications_locked })
+        .from('admin_settings' as any)
+        .update({ applications_locked: !(adminSettings as any)?.applications_locked } as any)
         .eq('id', adminSettings?.id);
       
       if (error) throw error;
