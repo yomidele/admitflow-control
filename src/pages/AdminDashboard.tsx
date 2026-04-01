@@ -51,7 +51,7 @@ export default function AdminDashboard() {
     queryKey: ['admin-applications'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('applications')
+        .from('applications' as any)
         .select(`
           *,
           programs:program_id (
@@ -65,7 +65,7 @@ export default function AdminDashboard() {
         .order('submitted_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
     enabled: isAdmin,
   });
@@ -75,11 +75,11 @@ export default function AdminDashboard() {
     queryKey: ['programs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('programs')
+        .from('programs' as any)
         .select('*');
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
@@ -88,12 +88,12 @@ export default function AdminDashboard() {
     queryKey: ['admin-settings'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('admin_settings')
+        .from('admin_settings' as any)
         .select('*')
         .single();
       
       if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return data as any;
     },
   });
 
@@ -101,8 +101,8 @@ export default function AdminDashboard() {
   const updateDeadlineMutation = useMutation({
     mutationFn: async (newDeadline: string) => {
       const { error } = await supabase
-        .from('admin_settings')
-        .update({ application_deadline: newDeadline })
+        .from('admin_settings' as any)
+        .update({ application_deadline: newDeadline } as any)
         .eq('id', adminSettings?.id);
       
       if (error) throw error;
@@ -120,15 +120,15 @@ export default function AdminDashboard() {
   const toggleLockMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from('admin_settings')
-        .update({ applications_locked: !adminSettings?.applications_locked })
+        .from('admin_settings' as any)
+        .update({ applications_locked: !(adminSettings as any)?.applications_locked } as any)
         .eq('id', adminSettings?.id);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
-      toast.success(adminSettings?.applications_locked ? 'Applications unlocked' : 'Applications locked');
+      toast.success((adminSettings as any)?.applications_locked ? 'Applications unlocked' : 'Applications locked');
     },
     onError: (error: any) => {
       toast.error('Failed to toggle lock', { description: error.message });
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
           .filter((a: any) => a.program_id === program.id)
           .sort((a: any, b: any) => b.total_score - a.total_score);
 
-        let slotsRemaining = program.slots;
+        let slotsRemaining = (program as any).slots;
         const cutoffs = [180, 170, 160, 150];
 
         for (let roundIndex = 0; roundIndex < cutoffs.length && slotsRemaining > 0; roundIndex++) {
@@ -163,16 +163,16 @@ export default function AdminDashboard() {
             if (app.status !== 'submitted') continue;
 
             // Generate matriculation number
-            const { data: matricNum } = await supabase.rpc('generate_matriculation_number', {
+            const { data: matricNum } = await (supabase.rpc as any)('generate_matriculation_number', {
               p_program_id: program.id
             });
 
             // Update application
             await supabase
-              .from('applications')
+              .from('applications' as any)
               .update({
                 status: 'selection_pending',
-                rank: program.slots - slotsRemaining + 1,
+                rank: (program as any).slots - slotsRemaining + 1,
                 admission_round: roundIndex + 1,
                 matriculation_number: matricNum,
                 scholarship_status: app.total_score >= 190 ? 'eligible' : 'not_eligible',
@@ -188,15 +188,15 @@ export default function AdminDashboard() {
         for (const app of programApps) {
           if (app.status === 'submitted') {
             await supabase
-              .from('applications')
-              .update({ status: 'selection_pending' })
+              .from('applications' as any)
+              .update({ status: 'selection_pending' } as any)
               .eq('id', app.id);
           }
         }
       }
 
       // Create selection run record
-      await supabase.from('selection_runs').insert({
+      await supabase.from('selection_runs' as any).insert({
         scheduled_at: new Date().toISOString(),
         executed_at: new Date().toISOString(),
         status: 'completed',
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                 <div className="space-y-2">
                   <Label>Release Results</Label>
                   <Button 
-                    variant="success"
+                    variant="default"
                     onClick={() => releaseMutation.mutate()}
                     className="w-full"
                     disabled={stats.pending === 0 || releaseMutation.isPending}

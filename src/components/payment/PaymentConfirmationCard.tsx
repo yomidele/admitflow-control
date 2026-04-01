@@ -25,15 +25,15 @@ export function PaymentConfirmationCard({ confirmation, onSuccess }: PaymentConf
   const confirmPaymentMutation = useMutation({
     mutationFn: async () => {
       const { error: updateError } = await supabase
-        .from("payment_confirmations")
-        .update({ status: "confirmed", reviewed_at: new Date().toISOString() })
+        .from("payment_confirmations" as any)
+        .update({ status: "confirmed", reviewed_at: new Date().toISOString() } as any)
         .eq("id", confirmation.id);
 
       if (updateError) throw updateError;
 
       const { error: orderError } = await supabase
-        .from("orders")
-        .update({ payment_status: "paid" })
+        .from("orders" as any)
+        .update({ payment_status: "paid" } as any)
         .eq("id", confirmation.order_id);
 
       if (orderError) throw orderError;
@@ -49,7 +49,7 @@ export function PaymentConfirmationCard({ confirmation, onSuccess }: PaymentConf
   const rejectPaymentMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase
-        .from("payment_confirmations")
+        .from("payment_confirmations" as any)
         .update({
           status: "rejected",
           rejection_reason: rejectReason,

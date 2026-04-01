@@ -28,7 +28,7 @@ const Payments = () => {
   const { data: sites } = useQuery({
     queryKey: ["sites"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("sites").select("*").order("name");
+      const { data, error } = await supabase.from("sites" as any).select("*").order("name");
       if (error) throw error;
       return data;
     },
@@ -39,7 +39,7 @@ const Payments = () => {
     queryKey: ["payment-configs"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("payment_configs")
+        .from("payment_configs" as any)
         .select("*, sites(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -52,7 +52,7 @@ const Payments = () => {
     queryKey: ["manual-payment-configs"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("manual_payment_config")
+        .from("manual_payment_config" as any)
         .select("*, sites(name)")
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -65,7 +65,7 @@ const Payments = () => {
     queryKey: ["payment-confirmations"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("payment_confirmations")
+        .from("payment_confirmations" as any)
         .select("*, sites(name), orders(customer_name, customer_email, total_amount, payment_status)")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -77,7 +77,7 @@ const Payments = () => {
   // Toggle gateway mutation
   const toggleGatewayMutation = useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
-      const { error } = await supabase.from("payment_configs").update({ is_active } as any).eq("id", id);
+      const { error } = await supabase.from("payment_configs" as any).update({ is_active } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payment-configs"] }),
@@ -86,7 +86,7 @@ const Payments = () => {
   // Delete gateway mutation
   const deleteGatewayMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("payment_configs").delete().eq("id", id);
+      const { error } = await supabase.from("payment_configs" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -98,7 +98,7 @@ const Payments = () => {
   // Delete manual config mutation
   const deleteManualMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("manual_payment_config").delete().eq("id", id);
+      const { error } = await supabase.from("manual_payment_config" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

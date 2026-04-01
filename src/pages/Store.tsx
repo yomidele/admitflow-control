@@ -356,7 +356,7 @@ function PaymentModal({
       const timestamp = Date.now();
       const fileName = `${businessId}/${timestamp}-${paymentProof.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("payment_proofs")
+        .from("payment_proofs" as any)
         .upload(fileName, paymentProof);
 
       if (uploadError) {
@@ -365,12 +365,12 @@ function PaymentModal({
 
       // Get public URL
       const { data: publicData } = supabase.storage
-        .from("payment_proofs")
+        .from("payment_proofs" as any)
         .getPublicUrl(fileName);
 
       // Create order
       const { data: orderData, error: orderError } = await supabase
-        .from("orders")
+        .from("orders" as any)
         .insert({
           site_id: businessId,
           product_id: product.id,
@@ -389,7 +389,7 @@ function PaymentModal({
 
       // Create payment confirmation
       const { error: confirmError } = await supabase
-        .from("payment_confirmations")
+        .from("payment_confirmations" as any)
         .insert({
           site_id: businessId,
           order_id: orderData.id,
