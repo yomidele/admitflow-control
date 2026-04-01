@@ -88,7 +88,7 @@ export default function AdminDashboard() {
     queryKey: ['admin-settings'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('admin_settings')
+        .from('admin_settings' as any)
         .select('*')
         .single();
       
