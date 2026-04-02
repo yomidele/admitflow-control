@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Globe, Package, ShoppingCart, CreditCard,
-  MessageSquare, FileText, Code, LogOut, Settings, Menu, X, Users
+  MessageSquare, FileText, Code, LogOut, Settings, Menu, X
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -30,10 +30,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex h-14 items-center gap-3 px-4 border-b border-border shrink-0">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-          <Users className="h-4 w-4 text-primary-foreground" />
-        </div>
-        <span className="font-bold text-sm">AI Sales Rep</span>
         {isMobile && (
           <button onClick={() => setMobileOpen(false)} className="ml-auto p-1">
             <X className="h-5 w-5" />
@@ -102,13 +98,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Mobile header */}
         {isMobile && (
           <header className="flex items-center h-14 px-4 border-b border-border bg-card shrink-0">
-            <button onClick={() => setMobileOpen(true)} className="p-1 mr-3">
+            <button onClick={() => setMobileOpen(true)} className="p-1">
               <Menu className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="font-bold text-sm">AI Sales Rep</span>
-            </div>
           </header>
         )}
         <main className="flex-1 overflow-y-auto">
