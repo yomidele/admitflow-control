@@ -111,6 +111,13 @@ export default function Store() {
     );
   }
 
+  // Render generated landing page HTML
+  if (generatedHtml) {
+    return (
+      <div className="w-full min-h-screen" dangerouslySetInnerHTML={{ __html: generatedHtml }} />
+    );
+  }
+
   if (error || !data) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
