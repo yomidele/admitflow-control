@@ -3,7 +3,7 @@
  * but aren't yet reflected in the auto-generated types.
  * Usage: supabaseFrom('sites') instead of supabase.from('sites')
  */
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase-external";
 
 export function supabaseFrom(table: string) {
   return (supabase as any).from(table);

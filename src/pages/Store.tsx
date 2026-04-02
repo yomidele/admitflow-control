@@ -56,7 +56,7 @@ export default function Store() {
     const fetchLandingPage = async () => {
       try {
         setLoading(true);
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
         const response = await fetch(
           `${supabaseUrl}/functions/v1/get-landing-page?slug=${slug}`,
           {
@@ -301,7 +301,7 @@ function PaymentModal({
       setLoading(true);
       setError(null);
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
       const response = await fetch(
         `${supabaseUrl}/functions/v1/create-payment-link`,
         {
@@ -346,8 +346,8 @@ function PaymentModal({
       setLoading(true);
       setError(null);
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxZW1ndmV1dmtkeWVjdGR6cHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzI1NzEsImV4cCI6MjA5MDIwODU3MX0.QixH7bgN8PsZLSYtsjPLBti7BxUV572vRIWr2mwBHvA';
       const supabase = (await import("@supabase/supabase-js")).createClient(
         supabaseUrl,
         supabaseKey
