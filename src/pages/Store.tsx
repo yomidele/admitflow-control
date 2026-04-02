@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ChatInterface from "@/components/ChatInterface";
+import { supabase } from "@/lib/supabase-external";
 
 interface LandingPageData {
   business: {
@@ -47,6 +48,7 @@ interface LandingPageData {
 export default function Store() {
   const { slug } = useParams<{ slug: string }>();
   const [data, setData] = useState<LandingPageData | null>(null);
+  const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<LandingPageData["products"][0] | null>(null);
@@ -56,14 +58,27 @@ export default function Store() {
     const fetchLandingPage = async () => {
       try {
         setLoading(true);
+
+        // Check if this is a generated landing page (lp_ prefix)
+        if (slug?.startsWith("lp_")) {
+          const { data: lp, error: lpError } = await supabase
+            .from("landing_pages")
+            .select("*")
+            .eq("id", slug)
+            .single();
+
+          if (!lpError && lp?.html_content) {
+            setGeneratedHtml(lp.html_content);
+            return;
+          }
+          // If not found in landing_pages, try as site slug
+        }
+
+        // Try edge function for site-based landing pages
         const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
         const response = await fetch(
           `${supabaseUrl}/functions/v1/get-landing-page?slug=${slug}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
+          { headers: { "Content-Type": "application/json" } }
         );
 
         if (!response.ok) {
