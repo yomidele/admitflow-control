@@ -1,8 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2, AlertCircle, ShoppingCart, DollarSign } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2, AlertCircle, ShoppingCart, DollarSign, MessageCircle, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ChatInterface from "@/components/ChatInterface";
