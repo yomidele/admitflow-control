@@ -76,9 +76,16 @@ export default function Store() {
 
         // Try edge function (resolves by slug or id)
         const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxZW1ndmV1dmtkeWVjdGR6cHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzI1NzEsImV4cCI6MjA5MDIwODU3MX0.QixH7bgN8PsZLSYtsjPLBti7BxUV572vRIWr2mwBHvA';
         const response = await fetch(
           `${supabaseUrl}/functions/v1/get-landing-page?slug=${encodeURIComponent(slug)}`,
-          { headers: { "Content-Type": "application/json" } }
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+          }
         );
 
         if (!response.ok) {
