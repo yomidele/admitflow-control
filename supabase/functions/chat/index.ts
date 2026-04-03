@@ -13,6 +13,7 @@ const PROVIDERS = [
 ];
 
 const EMAIL_REGEX = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i;
+const PHONE_REGEX = /(?:\+?\d{1,4}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,5}/;
 
 // ── PROMPT INJECTION DETECTION ──
 const INJECTION_PATTERNS = [
@@ -34,6 +35,18 @@ const INJECTION_PATTERNS = [
 
 function detectPromptInjection(message: string): boolean {
   return INJECTION_PATTERNS.some((p) => p.test(message));
+}
+
+// ── ORDER CANCELLATION DETECTION ──
+const CANCEL_PATTERNS = [
+  /\b(cancel)\s*(my\s*)?(order|purchase)\b/i,
+  /\bstart\s*again\b/i,
+  /\brestart\b/i,
+  /\bcancel\s*everything\b/i,
+];
+
+function detectCancelIntent(message: string): boolean {
+  return CANCEL_PATTERNS.some((p) => p.test(message));
 }
 
 /** Sanitize user input — strip HTML and limit length */
@@ -84,6 +97,8 @@ async function callDynamicCheckout(
   items: CartItem[],
   customerEmail: string,
   customerName: string,
+  customerPhone?: string,
+  customerAddress?: string,
   conversationId?: string,
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -101,6 +116,8 @@ async function callDynamicCheckout(
         total_amount: items.reduce((s, i) => s + i.unit_price * i.quantity, 0),
         customer_email: customerEmail,
         customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_address: customerAddress,
         conversation_id: conversationId,
         description: items.map(i => `${i.quantity}x ${i.name}`).join(" + "),
       }),
@@ -266,7 +283,20 @@ function extractStructuredOrderFromMessages(messages: any[], products: any[]) {
 
   if (!items.length || !email || !customerName) return null;
 
-  return { items, customerEmail: email, customerName };
+  const phone = combined.match(PHONE_REGEX)?.[0]?.trim() || null;
+
+  // Extract address - look for patterns like "address is...", "deliver to...", "my address..."
+  let address: string | null = null;
+  for (let i = userMessages.length - 1; i >= 0; i--) {
+    const msg = userMessages[i];
+    const addrMatch = msg.match(/(?:address\s*(?:is)?|deliver\s+to|ship\s+to|location\s*(?:is)?)\s*[:\-]?\s*(.{10,150})/i);
+    if (addrMatch?.[1]) { address = addrMatch[1].trim(); break; }
+  }
+
+  // Require address for fallback extraction too
+  if (!address) return null;
+
+  return { items, customerEmail: email, customerName, customerPhone: phone, customerAddress: address };
 }
 
 function buildCheckoutResponse(checkoutResult: { success: boolean; data?: any; error?: string }, cartItems: CartItem[], currencySymbol: string) {
@@ -320,8 +350,10 @@ function buildCartTools(products: any[]) {
             },
             customer_email: { type: "string", description: "Customer email address" },
             customer_name: { type: "string", description: "Customer name" },
+            customer_phone: { type: "string", description: "Customer phone number" },
+            customer_address: { type: "string", description: "Customer delivery address" },
           },
-          required: ["items", "customer_email", "customer_name"],
+          required: ["items", "customer_email", "customer_name", "customer_phone", "customer_address"],
         },
       },
     },
@@ -362,6 +394,44 @@ serve(async (req) => {
       console.warn(`[SECURITY] Prompt injection detected from visitor ${visitorId}: ${query.slice(0, 100)}`);
       const safeReply = "I'm here to help you with our products and services! What would you like to know? 😊";
       return new Response(JSON.stringify({ reply: safeReply, conversationId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── ORDER CANCELLATION HANDLING ──
+    if (detectCancelIntent(query)) {
+      const supabaseUrlEnv = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sbCancel = createClient(supabaseUrlEnv, supabaseServiceKey);
+
+      // Find the most recent pending/paid order for this site + visitor
+      let cancelledAny = false;
+      if (conversationId) {
+        const { data: recentOrder } = await sbCancel
+          .from("orders")
+          .select("id")
+          .eq("site_id", siteId)
+          .eq("conversation_id", conversationId)
+          .in("payment_status", ["pending"])
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (recentOrder) {
+          await sbCancel
+            .from("orders")
+            .update({ payment_status: "cancelled" })
+            .eq("id", recentOrder.id)
+            .eq("site_id", siteId);
+          cancelledAny = true;
+        }
+      }
+
+      const cancelReply = cancelledAny
+        ? "Your order has been cancelled. Let's start again 😊 What would you like to buy?"
+        : "You don't have an active order to cancel. What would you like to buy? 😊";
+
+      return new Response(JSON.stringify({ reply: cancelReply, conversationId }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -455,9 +525,18 @@ IDENTITY: You are a trained sales representative. NEVER say you're an AI, bot, o
 You have a tool called "create_order" to generate secure payment links.
 When a customer wants to buy:
 1. CONFIRM the items, quantities, and prices from the product list
-2. COLLECT their full name and email address
-3. Call create_order with the cart items, email, and name
+2. COLLECT their full name, email address, AND phone number
+3. Call create_order with the cart items, email, name, and phone
 4. The system will return a real payment link — show it as: [Complete Payment](url)
+
+🚨 REQUIRED CHECKOUT FIELDS (MANDATORY):
+Before completing ANY order, you MUST have ALL of these:
+- ✅ Customer full name
+- ✅ Customer email address
+- ✅ Customer phone number
+- ✅ Customer delivery/shipping address
+If ANY of these are missing, respond: "To complete your order, I'll need your full name, email address, phone number, and delivery address."
+NEVER call create_order without all four fields.
 
 MULTI-PRODUCT SUPPORT:
 - Customers can buy MULTIPLE products in ONE order
@@ -474,7 +553,7 @@ PAYMENT RULES (CRITICAL):
 SALES BEHAVIOR:
 - Use ONLY the product data below — NEVER invent products or prices
 - Guide users toward purchasing with enthusiasm
-- Sales flow: DISCOVER → SELECT → COLLECT details (name, email) → CALL create_order → SHOW LINK
+- Sales flow: DISCOVER → SELECT → COLLECT details (name, email, phone, address) → CALL create_order → SHOW LINK
 - Keep responses short (2-4 sentences) unless listing products
 - When showing products, include name, price, and image if available
 - Suggest complementary products when appropriate
@@ -572,6 +651,8 @@ ${manualPaymentContext}`;
         cartItems,
         args.customer_email,
         args.customer_name || "Customer",
+        args.customer_phone,
+        args.customer_address,
         activeConvoId,
       );
 
@@ -595,6 +676,8 @@ ${manualPaymentContext}`;
         fallbackOrder.items,
         fallbackOrder.customerEmail,
         fallbackOrder.customerName,
+        fallbackOrder.customerPhone || undefined,
+        fallbackOrder.customerAddress || undefined,
         activeConvoId,
       );
 

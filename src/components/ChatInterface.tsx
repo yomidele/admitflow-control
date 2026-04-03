@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Send, Users, User, Loader2, AlertTriangle } from "lucide-react";
 import { sanitizeChatMessage, detectPromptInjection, checkRateLimit } from "@/lib/security";
 import { logSecurityEvent } from "@/lib/security-logger";
+import { useChatbotTheme } from "@/hooks/useChatbotTheme";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -36,6 +37,8 @@ const cacheMessages = (siteId: string, msgs: Msg[]) => {
 
 const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = false, welcomeMessage }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Msg[]>(() => getCachedMessages(siteId));
+  const theme = useChatbotTheme(siteId, supabaseUrl, supabaseKey);
+  const hasTheme = !!(theme.primary_color || theme.background_color);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -143,11 +146,19 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
 
   const defaultWelcome = welcomeMessage || "👋 Welcome! What are you looking to buy today?";
 
+  const themeStyles = hasTheme ? {
+    '--chat-primary': theme.primary_color,
+    '--chat-secondary': theme.secondary_color,
+    '--chat-bg': theme.background_color,
+    '--chat-text': theme.text_color,
+    '--chat-button': theme.button_color,
+  } as React.CSSProperties : {};
+
   return (
-    <div className={embedded ? "flex flex-col h-full bg-card rounded-xl overflow-hidden border" : "flex flex-col h-full"}>
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-card shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <Users className="h-4 w-4 text-primary-foreground" />
+    <div className={embedded ? "flex flex-col h-full rounded-xl overflow-hidden border" : "flex flex-col h-full"} style={{ ...themeStyles, backgroundColor: hasTheme ? theme.background_color : undefined, color: hasTheme ? theme.text_color : undefined }}>
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-card shrink-0" style={hasTheme ? { backgroundColor: theme.primary_color, color: "#fff" } : undefined}>
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${hasTheme ? "" : "bg-primary"}`} style={hasTheme ? { backgroundColor: theme.secondary_color } : undefined}>
+          <Users className={`h-4 w-4 ${hasTheme ? "" : "text-primary-foreground"}`} style={hasTheme ? { color: theme.text_color } : undefined} />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold truncate">{siteName || "AI Sales Rep"}</p>
@@ -172,9 +183,15 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
                 <Users className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
             )}
-            <div className={`max-w-[85%] sm:max-w-[80%] rounded-xl px-3 sm:px-4 py-2.5 text-sm ${
-              msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
-            }`}>
+            <div
+              className={`max-w-[85%] sm:max-w-[80%] rounded-xl px-3 sm:px-4 py-2.5 text-sm ${
+                !hasTheme ? (msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted") : ""
+              }`}
+              style={hasTheme ? {
+                backgroundColor: msg.role === "user" ? theme.primary_color : theme.secondary_color,
+                color: msg.role === "user" ? "#fff" : theme.text_color,
+              } : undefined}
+            >
               {msg.role === "assistant" ? (
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
@@ -204,7 +221,7 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
       <div className="border-t bg-card px-3 sm:px-4 py-3 shrink-0">
         <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
           <Input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="What are you looking for?" disabled={isLoading} className="flex-1" />
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+          <Button type="submit" size="icon" disabled={isLoading || !input.trim()} style={hasTheme ? { backgroundColor: theme.button_color } : undefined}>
             <Send className="h-4 w-4" />
           </Button>
         </form>

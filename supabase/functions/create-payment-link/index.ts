@@ -22,6 +22,7 @@ interface OrderPayload {
   customer_email: string;
   customer_name?: string;
   customer_phone?: string;
+  customer_address?: string;
   conversation_id?: string;
 }
 
@@ -36,7 +37,7 @@ serve(async (req) => {
     }
 
     const body: OrderPayload = await req.json();
-    const { site_id, items, customer_email, customer_name, customer_phone, conversation_id, description } = body;
+    const { site_id, items, customer_email, customer_name, customer_phone, customer_address, conversation_id, description } = body;
 
     // ── VALIDATION ──
     if (!site_id || !customer_email) {
@@ -114,6 +115,7 @@ serve(async (req) => {
           customer_name: customer_name || "Customer",
           customer_email,
           customer_phone,
+          customer_address: customer_address || null,
           total_amount: calculatedTotal,
           payment_status: "pending",
           payment_reference: reference,
@@ -161,6 +163,7 @@ serve(async (req) => {
       customer_name: customer_name || "Customer",
       customer_email,
       customer_phone,
+      customer_address: customer_address || null,
       total_amount: calculatedTotal,
       payment_status: "pending",
       payment_reference: reference,
@@ -259,6 +262,16 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // ── RECORD IN PAYMENTS TABLE ──
+    await supabase.from("payments").insert({
+      order_id: order.id,
+      site_id,
+      status: "pending",
+      reference,
+      amount: calculatedTotal,
+      provider: paymentConfig.provider,
+    });
 
     // ── RETURN RESPONSE ──
     return new Response(JSON.stringify({
