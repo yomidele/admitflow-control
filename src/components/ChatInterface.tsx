@@ -1,15 +1,16 @@
 // @ts-nocheck
 import { useState, useRef, useEffect, useCallback } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Users, User, Loader2, AlertTriangle } from "lucide-react";
+import { Send, Users, Loader2 } from "lucide-react";
 import { sanitizeChatMessage, detectPromptInjection, checkRateLimit } from "@/lib/security";
 import { logSecurityEvent } from "@/lib/security-logger";
 import { useChatbotTheme } from "@/hooks/useChatbotTheme";
+import ChatMessageBubble from "@/components/chat/ChatMessageBubble";
+import ChatImageUpload from "@/components/chat/ChatImageUpload";
+import { supabase } from "@/lib/supabase-external";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; image_url?: string };
 
 type ChatInterfaceProps = {
   siteId: string;
@@ -52,17 +53,37 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
   const baseUrl = supabaseUrl || 'https://eqemgveuvkdyectdzpzy.supabase.co';
   const apiKey = supabaseKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxZW1ndmV1dmtkeWVjdGR6cHp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzI1NzEsImV4cCI6MjA5MDIwODU3MX0.QixH7bgN8PsZLSYtsjPLBti7BxUV572vRIWr2mwBHvA';
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    const ext = file.name.split(".").pop();
+    const path = `${siteId}/${visitorId.current}/${timestamp}_${random}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { contentType: file.type, cacheControl: "3600" });
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+    const imageUrl = urlData.publicUrl;
+
+    const userMsg: Msg = { role: "user", content: "📷 Image uploaded", image_url: imageUrl };
+    setMessages((prev) => [...prev, userMsg]);
+  }, [siteId]);
+
   const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
 
-    // Client-side rate limiting (30 msgs/min)
     if (!checkRateLimit(`chat_${siteId}`, 30, 60_000)) {
       logSecurityEvent("rate_limited", { siteId });
       setMessages((prev) => [...prev, { role: "assistant", content: "You're sending messages too quickly. Please wait a moment. ⏳" }]);
       return;
     }
 
-    // Client-side injection pre-filter (logged, but still sent — server handles blocking)
     if (detectPromptInjection(input)) {
       logSecurityEvent("prompt_injection_detected", { siteId, snippet: input.slice(0, 80) });
     }
@@ -177,33 +198,7 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
           </div>
         )}
         {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-2 sm:gap-3 animate-slide-up ${msg.role === "user" ? "justify-end" : ""}`}>
-            {msg.role === "assistant" && (
-              <div className="flex-shrink-0 h-7 w-7 rounded-lg bg-primary flex items-center justify-center">
-                <Users className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
-            )}
-            <div
-              className={`max-w-[85%] sm:max-w-[80%] rounded-xl px-3 sm:px-4 py-2.5 text-sm ${
-                !hasTheme ? (msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted") : ""
-              }`}
-              style={hasTheme ? {
-                backgroundColor: msg.role === "user" ? theme.primary_color : theme.secondary_color,
-                color: msg.role === "user" ? "#fff" : theme.text_color,
-              } : undefined}
-            >
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                </div>
-              ) : msg.content}
-            </div>
-            {msg.role === "user" && (
-              <div className="flex-shrink-0 h-7 w-7 rounded-lg bg-secondary flex items-center justify-center">
-                <User className="h-3.5 w-3.5 text-secondary-foreground" />
-              </div>
-            )}
-          </div>
+          <ChatMessageBubble key={i} msg={msg} hasTheme={hasTheme} theme={theme} />
         ))}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex gap-3 animate-slide-up">
@@ -219,7 +214,8 @@ const ChatInterface = ({ siteId, siteName, supabaseUrl, supabaseKey, embedded = 
       </div>
 
       <div className="border-t bg-card px-3 sm:px-4 py-3 shrink-0">
-        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2">
+        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="flex gap-2 items-center">
+          <ChatImageUpload onFileSelected={handleImageUpload} disabled={isLoading} />
           <Input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="What are you looking for?" disabled={isLoading} className="flex-1" />
           <Button type="submit" size="icon" disabled={isLoading || !input.trim()} style={hasTheme ? { backgroundColor: theme.button_color } : undefined}>
             <Send className="h-4 w-4" />
