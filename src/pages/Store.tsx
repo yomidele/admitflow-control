@@ -273,6 +273,35 @@ export default function Store() {
         </section>
       )}
 
+      {/* Floating Chat Widget */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {showFloatingChat ? (
+          <div className="w-[380px] h-[500px] bg-card rounded-2xl shadow-2xl border overflow-hidden flex flex-col animate-fade-in">
+            <div className="flex items-center justify-between px-4 py-2 border-b">
+              <span className="text-sm font-semibold">{data.business.name}</span>
+              <button onClick={() => setShowFloatingChat(false)} className="p-1 hover:bg-muted rounded">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ChatInterface
+                siteId={data.business.id}
+                siteName={data.business.name}
+                embedded={true}
+                welcomeMessage={data.chat.welcome_message || data.business.welcome_message}
+              />
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowFloatingChat(true)}
+            className="h-14 w-14 rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 flex items-center justify-center transition-transform hover:scale-105"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </button>
+        )}
+      </div>
+
       {/* Payment Modal */}
       {showPaymentModal && selectedProduct && (
         <PaymentModal
