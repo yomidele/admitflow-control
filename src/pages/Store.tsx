@@ -74,10 +74,10 @@ export default function Store() {
           // If not found in landing_pages, try as site slug
         }
 
-        // Try edge function for site-based landing pages
+        // Try edge function (resolves by slug or id)
         const supabaseUrl = 'https://eqemgveuvkdyectdzpzy.supabase.co';
         const response = await fetch(
-          `${supabaseUrl}/functions/v1/get-landing-page?slug=${slug}`,
+          `${supabaseUrl}/functions/v1/get-landing-page?slug=${encodeURIComponent(slug)}`,
           { headers: { "Content-Type": "application/json" } }
         );
 
