@@ -5,6 +5,7 @@ import { Loader2, AlertCircle, ShoppingCart, DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ChatInterface from "@/components/ChatInterface";
+import FloatingChatWidget from "@/components/chat/FloatingChatWidget";
 import { supabase } from "@/lib/supabase-external";
 
 interface LandingPageData {
