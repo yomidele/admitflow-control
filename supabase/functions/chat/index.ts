@@ -585,6 +585,69 @@ serve(async (req) => {
     const products = productsResult.data || [];
     const manualPayConfig = manualPayResult.data;
 
+    // ── IMAGE ANALYSIS ──
+    // Check if the last user message contains an image URL
+    const imageMatch = query.match(IMAGE_URL_IN_MSG);
+    let imageContext = "";
+
+    if (imageMatch) {
+      const uploadedImageUrl = imageMatch[1];
+      console.log(`[IMAGE] Analyzing uploaded image: ${uploadedImageUrl.slice(0, 80)}...`);
+
+      const imageAnalysis = await analyzeUploadedImage(uploadedImageUrl, products, sym);
+
+      if (imageAnalysis.type === "receipt") {
+        // Store receipt for admin review
+        const receiptRecord = {
+          site_id: siteId,
+          conversation_id: activeConvoId,
+          visitor_id: visitorId,
+          image_url: uploadedImageUrl,
+          status: "pending_review",
+          created_at: new Date().toISOString(),
+        };
+
+        const { error: receiptError } = await supabase
+          .from("payment_confirmations")
+          .insert(receiptRecord);
+
+        if (receiptError) {
+          console.error("Failed to store receipt:", receiptError);
+        }
+
+        const receiptReply = "Thank you for sending your payment receipt! 🧾 I've forwarded it to our team for verification. You'll receive a confirmation once it's been reviewed. Is there anything else I can help you with?";
+
+        if (activeConvoId) {
+          await supabase.from("chat_messages").insert({ conversation_id: activeConvoId, role: "user", content: query });
+          await supabase.from("chat_messages").insert({ conversation_id: activeConvoId, role: "assistant", content: receiptReply });
+        }
+
+        return new Response(JSON.stringify({ reply: receiptReply, conversationId: activeConvoId }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (imageAnalysis.type === "product_match" && imageAnalysis.matchedProducts?.length) {
+        const matchedList = imageAnalysis.matchedProducts.map((p: any) =>
+          `- ${p.name} | ${sym}${p.price} | ${p.category || "General"}${p.image_url ? ` | Image: ${p.image_url}` : ""}`
+        ).join("\n");
+
+        imageContext = `\n\n🖼️ IMAGE ANALYSIS CONTEXT:
+The customer uploaded an image. Analysis: "${imageAnalysis.analysis}"
+The following products from our catalog visually match the uploaded image:
+${matchedList}
+Show these matched products to the customer with their images and prices. Ask if any of these are what they're looking for.`;
+      } else if (imageAnalysis.type === "product_match") {
+        imageContext = `\n\n🖼️ IMAGE ANALYSIS CONTEXT:
+The customer uploaded an image of a product. Analysis: "${imageAnalysis.analysis}"
+No exact matches found in our catalog. Let the customer know we don't have an exact match but show similar products if available.`;
+      } else {
+        imageContext = `\n\n🖼️ IMAGE ANALYSIS CONTEXT:
+The customer uploaded an image. Analysis: "${imageAnalysis.analysis || "Could not determine the content."}"
+Acknowledge the image and continue helping the customer.`;
+      }
+    }
+
     // Build context strings
     const currSymbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", NGN: "₦", KES: "KSh", GHS: "₵", ZAR: "R", INR: "₹", CAD: "CA$", AUD: "A$" };
     const sym = currSymbols[site.currency || "USD"] || (site.currency + " ");
