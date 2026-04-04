@@ -1,6 +1,109 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ── IMAGE ANALYSIS with Lovable AI (Vision) ──
+const IMAGE_URL_IN_MSG = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp)(?:\?[^\s]*)?)/i;
+
+async function analyzeUploadedImage(
+  imageUrl: string,
+  products: any[],
+  sym: string,
+): Promise<{ type: "product_match" | "receipt" | "unknown"; matchedProducts?: any[]; analysis?: string }> {
+  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableApiKey) {
+    console.warn("LOVABLE_API_KEY not set, skipping image analysis");
+    return { type: "unknown" };
+  }
+
+  const productList = products.map(p => `- "${p.name}" (${sym}${p.price}) | image: ${p.image_url || "none"}`).join("\n");
+
+  try {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `You are an image classifier for an e-commerce chatbot. Analyze the image and classify it as ONE of:
+1. "product_match" — the image shows a physical product, item, or something a customer wants to find/buy
+2. "receipt" — the image shows a payment receipt, bank transfer confirmation, transaction proof, or payment screenshot
+3. "unknown" — anything else (selfies, memes, random photos, etc.)
+
+If "product_match", compare with available products and return matching product names (ONLY if visually similar or clearly the same category — do NOT force matches).
+
+Available products:
+${productList}
+
+Respond using the classify_image tool.`,
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: imageUrl } },
+              { type: "text", text: "Classify this image." },
+            ],
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "classify_image",
+              description: "Classify the uploaded image",
+              parameters: {
+                type: "object",
+                properties: {
+                  image_type: { type: "string", enum: ["product_match", "receipt", "unknown"] },
+                  matched_product_names: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "Names of matching products from the catalog (empty if no match or not a product image)",
+                  },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] },
+                  description: { type: "string", description: "Brief description of what the image shows" },
+                },
+                required: ["image_type", "matched_product_names", "confidence", "description"],
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "classify_image" } },
+      }),
+    });
+
+    if (!resp.ok) {
+      console.error("Image analysis failed:", resp.status, await resp.text());
+      return { type: "unknown" };
+    }
+
+    const data = await resp.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return { type: "unknown" };
+
+    const args = JSON.parse(toolCall.function.arguments);
+    const imageType = args.image_type || "unknown";
+
+    if (imageType === "product_match" && args.matched_product_names?.length > 0 && args.confidence !== "low") {
+      const matched = products.filter((p: any) =>
+        args.matched_product_names.some((name: string) =>
+          p.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(p.name.toLowerCase())
+        )
+      );
+      return { type: "product_match", matchedProducts: matched, analysis: args.description };
+    }
+
+    return { type: imageType, analysis: args.description };
+  } catch (e) {
+    console.error("Image analysis error:", e);
+    return { type: "unknown" };
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
