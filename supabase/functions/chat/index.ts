@@ -734,7 +734,7 @@ PRODUCT DISPLAY RULES (VERY IMPORTANT):
 WEBSITE KNOWLEDGE:
 ${knowledgeContext || "No specific knowledge available."}
 ${productContext || "No products catalogued yet."}
-${manualPaymentContext}`;
+${manualPaymentContext}${imageContext}`;
 
     // Store user message
     if (activeConvoId && lastUserMsg) {
