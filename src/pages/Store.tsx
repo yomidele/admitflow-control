@@ -53,7 +53,7 @@ export default function Store() {
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<LandingPageData["products"][0] | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showFloatingChat, setShowFloatingChat] = useState(false);
+  
 
   useEffect(() => {
     const fetchLandingPage = async () => {
