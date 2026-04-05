@@ -140,12 +140,18 @@ function detectPromptInjection(message: string): boolean {
   return INJECTION_PATTERNS.some((p) => p.test(message));
 }
 
-// ── ORDER CANCELLATION DETECTION ──
+// ── INTENT DETECTION (FUZZY) ──
 const CANCEL_PATTERNS = [
-  /\b(cancel)\s*(my\s*)?(order|purchase)\b/i,
-  /\bstart\s*again\b/i,
+  /\b(cancel)\s*(my\s*)?(order|purchase|transaction|request)\b/i,
+  /\bstart\s*(over|again|fresh)\b/i,
   /\brestart\b/i,
-  /\bcancel\s*everything\b/i,
+  /\bcancel\s*(everything|it|this)\b/i,
+  /\bi\s*(want|need)\s*to\s*(stop|cancel)\s*(this|it|my)?\b/i,
+  /\bnever\s*mind\b/i,
+  /\bforget\s*(it|about\s*it|the\s*order)\b/i,
+  /\bdon'?t\s*want\s*(it|this|to\s*buy)\s*anymore\b/i,
+  /\bremove\s*(my\s*)?(order|cart)\b/i,
+  /\bscrap\s*(the|my)?\s*(order)?\b/i,
 ];
 
 function detectCancelIntent(message: string): boolean {
@@ -585,6 +591,10 @@ serve(async (req) => {
     const products = productsResult.data || [];
     const manualPayConfig = manualPayResult.data;
 
+    // Currency symbol (needed for image analysis and responses)
+    const currSymbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", NGN: "₦", KES: "KSh", GHS: "₵", ZAR: "R", INR: "₹", CAD: "CA$", AUD: "A$" };
+    const sym = currSymbols[site.currency || "USD"] || (site.currency + " ");
+
     // ── IMAGE ANALYSIS ──
     // Check if the last user message contains an image URL
     const imageMatch = query.match(IMAGE_URL_IN_MSG);
@@ -649,8 +659,6 @@ Acknowledge the image and continue helping the customer.`;
     }
 
     // Build context strings
-    const currSymbols: Record<string, string> = { USD: "$", EUR: "€", GBP: "£", NGN: "₦", KES: "KSh", GHS: "₵", ZAR: "R", INR: "₹", CAD: "CA$", AUD: "A$" };
-    const sym = currSymbols[site.currency || "USD"] || (site.currency + " ");
 
     let knowledgeContext = "";
     if (chunks?.length) {
